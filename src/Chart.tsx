@@ -12,8 +12,6 @@ import { Group } from "@visx/group";
 
 const data = appleStock.slice(0, 10);
 
-type TooltipData = AppleStock;
-
 const getYValue = (d: AppleStock) => d.close;
 
 const getXValue = (d: AppleStock) => d.date;
@@ -54,7 +52,7 @@ const Chart = () => {
     tooltipData,
     tooltipLeft = 0,
     tooltipTop = 0,
-  } = useTooltip<TooltipData>();
+  } = useTooltip<AppleStock>();
 
   const xScale = useMemo(
     () =>
