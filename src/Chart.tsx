@@ -31,10 +31,6 @@ const Container = styled.div`
   min-width: 300px;
 `;
 
-const StyledSVG = styled.svg`
-  overflow: visible;
-`;
-
 const tooltipStyles = {
   ...defaultStyles,
   borderRadius: 4,
@@ -44,8 +40,16 @@ const tooltipStyles = {
     '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
 };
 
+const margin = 32;
+
 const Chart = () => {
-  const [ref, { width, height }] = useMeasure();
+  const [ref, bounds] = useMeasure();
+
+  const width = bounds.width || 100;
+  const height = bounds.height || 100;
+
+  const innerWidth = width - margin;
+  const innerHeight = height - margin;
 
   const {
     showTooltip,
@@ -58,38 +62,36 @@ const Chart = () => {
   const xScale = useMemo(
     () =>
       scaleBand<string>({
-        range: [0, width],
-        round: true,
+        range: [margin, innerWidth],
         domain: data.map(getXValue),
         padding: 0.2,
       }),
-    [width]
+    [innerWidth]
   );
 
   const yScale = useMemo(
     () =>
       scaleLinear<number>({
-        range: [height, 0],
-        round: true,
+        range: [innerHeight, margin],
         domain: [
           Math.min(...data.map(getYValue)) - 1,
-          Math.max(...data.map(getYValue)),
+          Math.max(...data.map(getYValue)) + 1,
         ],
       }),
-    [height]
+    [innerHeight]
   );
 
   return (
     <Wrapper>
       <Container ref={ref}>
-        <StyledSVG width={width} height={height}>
+        <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
           <Group>
             {data.map((d) => {
               const xValue = getXValue(d);
               const barWidth = xScale.bandwidth();
-              const barHeight = height - (yScale(getYValue(d)) ?? 0);
+              const barHeight = innerHeight - (yScale(getYValue(d)) ?? 0);
               const barX = xScale(xValue);
-              const barY = height - barHeight;
+              const barY = innerHeight - barHeight;
 
               return (
                 <Bar
@@ -104,14 +106,14 @@ const Chart = () => {
                       | TouchEvent<SVGRectElement>
                       | MouseEvent<SVGRectElement>
                   ) => {
-                    const eventSvgCoords = localPoint(event);
+                    const point = localPoint(event);
 
-                    if (!eventSvgCoords) return;
+                    if (!point) return;
 
                     showTooltip({
                       tooltipData: d,
-                      tooltipTop: eventSvgCoords.y,
-                      tooltipLeft: eventSvgCoords.x,
+                      tooltipTop: point.y,
+                      tooltipLeft: point.x,
                     });
                   }}
                   onMouseLeave={() => hideTooltip()}
@@ -122,16 +124,16 @@ const Chart = () => {
 
           <Group>
             <AxisBottom
-              top={height}
+              top={innerHeight}
               scale={xScale}
-              tickFormat={(date) => timeFormat("%d")(new Date(date))}
+              tickFormat={(date) => timeFormat("%m/%d")(new Date(date))}
             />
           </Group>
 
           <Group>
-            <AxisLeft scale={yScale} />
+            <AxisLeft left={margin} scale={yScale} />
           </Group>
-        </StyledSVG>
+        </svg>
 
         {tooltipData ? (
           <TooltipWithBounds
